@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive/hive.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
@@ -195,10 +195,18 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _confirmReset(context, ref),
           ),
           const Divider(),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('Version'),
-            subtitle: Text('1.0.0'),
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              final version = snapshot.data != null
+                  ? '${snapshot.data!.version}+${snapshot.data!.buildNumber}'
+                  : '—';
+              return ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('Version'),
+                subtitle: Text(version),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.feedback_outlined),
@@ -309,10 +317,9 @@ class SettingsScreen extends ConsumerWidget {
       body: 'Keep your system design skills sharp with today\'s cards.',
     );
 
-    final subscriptionBox = Hive.box('subscription');
-    final trialStartedAt = DateTime.tryParse(
-      (subscriptionBox.get('trialStartedAt') as String?) ?? '',
-    );
+    final trialStartedAt = ref
+        .read(subscriptionRepositoryProvider)
+        .getTrialStartedAt();
     if (trialStartedAt != null) {
       await NotificationService.instance.scheduleTrialExpiryReminder(
         trialStart: trialStartedAt,

@@ -57,6 +57,11 @@ class SubscriptionRepository {
     return tier == 'pro' ? SubscriptionTier.pro : SubscriptionTier.free;
   }
 
+  DateTime? getTrialStartedAt() {
+    final raw = (_subscriptionBox.get('trialStartedAt') as String?) ?? '';
+    return DateTime.tryParse(raw);
+  }
+
   Future<SubscriptionTier> getCurrentTier() async {
     final cached = getCachedTier();
     if (!isSupabaseConfigured || _supabase.auth.currentUser == null) {
