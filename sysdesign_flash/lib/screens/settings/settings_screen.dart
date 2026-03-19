@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
 import '../../providers/streak_provider.dart';
+import '../../providers/user_prefs_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -11,11 +12,20 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final userPrefs = ref.watch(userPrefsProvider);
+    final displayLabel = userPrefs.displayName.trim().isEmpty
+        ? 'Not set'
+        : userPrefs.displayName.trim();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Display name'),
+            subtitle: Text(displayLabel),
+          ),
           ListTile(
             leading: const Icon(Icons.palette_outlined),
             title: const Text('Theme'),
@@ -25,7 +35,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.flag_outlined),
             title: const Text('Daily Goal'),
-            subtitle: const Text('10 cards'),
+            subtitle: Text('${userPrefs.dailyGoal} cards / day'),
             onTap: () {},
           ),
           const Divider(),

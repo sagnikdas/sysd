@@ -13,17 +13,22 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
+  late final Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 900),
       vsync: this,
     );
     _scaleAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutBack,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0, 0.55, curve: Curves.easeOut),
     );
     _controller.forward();
     _navigateAfterDelay();
@@ -56,32 +61,35 @@ class _SplashScreenState extends State<SplashScreen>
 
     return Scaffold(
       body: Center(
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.architecture,
-                size: 80,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'SysDesign Flash',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.architecture,
+                  size: 80,
                   color: theme.colorScheme.primary,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Master system design visually',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 16),
+                Text(
+                  'SysDesign Flash',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Master system design visually',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

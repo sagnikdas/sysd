@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-class OnboardingScreen extends StatefulWidget {
+import '../../providers/user_prefs_provider.dart';
+import 'widgets/goal_picker.dart';
+
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   final _nameController = TextEditingController();
   int _currentPage = 0;
+  int _selectedGoal = 10;
 
   @override
   void dispose() {
@@ -22,21 +28,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
+    FocusScope.of(context).unfocus();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_completed', true);
-    final name = _nameController.text.trim();
-    if (name.isNotEmpty) {
-      await prefs.setString('user_name', name);
-    }
+
+    final prefsNotifier = ref.read(userPrefsProvider.notifier);
+    prefsNotifier.setDisplayName(_nameController.text);
+    prefsNotifier.setDailyGoal(_selectedGoal);
+    prefsNotifier.ensureJoinDateRecorded();
+
     if (!mounted) return;
     context.go('/home');
   }
 
   void _nextPage() {
+    FocusScope.of(context).unfocus();
     if (_currentPage < 2) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOutCubic,
       );
     } else {
       _completeOnboarding();
@@ -62,33 +72,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     theme: theme,
                   ),
                   _HowItWorksPage(theme: theme),
-                  _GoalPage(theme: theme),
+                  _GoalPage(
+                    theme: theme,
+                    selectedGoal: _selectedGoal,
+                    onGoalChanged: (g) => setState(() => _selectedGoal = g),
+                  ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      3,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 8,
-                        width: _currentPage == index ? 24 : 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
+                  SmoothPageIndicator(
+                    controller: _pageController,
+                    count: 3,
+                    effect: WormEffect(
+                      dotHeight: 8,
+                      dotWidth: 8,
+                      spacing: 10,
+                      activeDotColor: theme.colorScheme.primary,
+                      dotColor: theme.colorScheme.outlineVariant,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -116,11 +123,11 @@ class _WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const SizedBox(height: 24),
           Icon(
             Icons.architecture,
             size: 80,
@@ -128,17 +135,18 @@ class _WelcomePage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Welcome to\nSysDesign Flash',
+            'SysDesign Flash',
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
-            'Master system design through visual flashcards',
+            'Master system design visually',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -146,6 +154,7 @@ class _WelcomePage extends StatelessWidget {
           TextField(
             controller: nameController,
             textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
             decoration: InputDecoration(
               labelText: 'Your name',
               hintText: 'Enter your name',
@@ -155,6 +164,7 @@ class _WelcomePage extends StatelessWidget {
               prefixIcon: const Icon(Icons.person_outline),
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -168,43 +178,110 @@ class _HowItWorksPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.swipe,
-            size: 80,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          _SwipeDemoIllustration(theme: theme),
+          const SizedBox(height: 28),
           Text(
-            'Swipe to Learn',
-            style: theme.textTheme.headlineMedium?.copyWith(
+            'How it works',
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _InstructionRow(
             icon: Icons.arrow_forward,
             color: Colors.green,
             text: 'Swipe right — Got it!',
             theme: theme,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _InstructionRow(
             icon: Icons.arrow_back,
             color: Colors.orange,
             text: 'Swipe left — Review again',
             theme: theme,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           Text(
             'Each card has 3 tabs:\nDiagram · Key Points · Interview Q&A',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwipeDemoIllustration extends StatelessWidget {
+  final ThemeData theme;
+
+  const _SwipeDemoIllustration({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = theme.colorScheme;
+    return SizedBox(
+      height: 140,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            left: 24,
+            child: Icon(Icons.arrow_back, color: c.outline, size: 28),
+          ),
+          Positioned(
+            right: 24,
+            child: Icon(Icons.arrow_forward, color: c.outline, size: 28),
+          ),
+          Transform.rotate(
+            angle: -0.06,
+            child: Container(
+              width: 100,
+              height: 120,
+              decoration: BoxDecoration(
+                color: c.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: c.outlineVariant),
+                boxShadow: [
+                  BoxShadow(
+                    color: c.shadow.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(Icons.layers_outlined, size: 40, color: c.primary),
+              ),
+            ),
+          ),
+          Transform.translate(
+            offset: const Offset(28, 8),
+            child: Transform.rotate(
+              angle: 0.04,
+              child: Container(
+                width: 100,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: c.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: c.outlineVariant),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.swipe,
+                    size: 36,
+                    color: c.onSurfaceVariant,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -231,9 +308,15 @@ class _InstructionRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: color, size: 32),
+        Icon(icon, color: color, size: 28),
         const SizedBox(width: 12),
-        Text(text, style: theme.textTheme.titleMedium),
+        Flexible(
+          child: Text(
+            text,
+            style: theme.textTheme.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+        ),
       ],
     );
   }
@@ -241,45 +324,46 @@ class _InstructionRow extends StatelessWidget {
 
 class _GoalPage extends StatelessWidget {
   final ThemeData theme;
+  final int selectedGoal;
+  final ValueChanged<int> onGoalChanged;
 
-  const _GoalPage({required this.theme});
+  const _GoalPage({
+    required this.theme,
+    required this.selectedGoal,
+    required this.onGoalChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const SizedBox(height: 24),
           Icon(
-            Icons.flag,
-            size: 80,
+            Icons.flag_outlined,
+            size: 72,
             color: theme.colorScheme.primary,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Text(
-            'Set Your Goal',
-            style: theme.textTheme.headlineMedium?.copyWith(
+            'Set your goal',
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
-            'How many cards per day?',
+            'How many cards do you want to study per day?',
+            textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 32),
-          Wrap(
-            spacing: 12,
-            children: [5, 10, 20].map((goal) {
-              return ChoiceChip(
-                label: Text('$goal cards'),
-                selected: goal == 10,
-                onSelected: (_) {},
-              );
-            }).toList(),
+          GoalPicker(
+            selectedGoal: selectedGoal,
+            onChanged: onGoalChanged,
           ),
         ],
       ),

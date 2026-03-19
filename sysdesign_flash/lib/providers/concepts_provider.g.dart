@@ -167,3 +167,44 @@ final class FilteredConceptsFamily extends $Family
   @override
   String toString() => r'filteredConceptsProvider';
 }
+
+@ProviderFor(homeGridConcepts)
+final homeGridConceptsProvider = HomeGridConceptsProvider._();
+
+final class HomeGridConceptsProvider
+    extends $FunctionalProvider<List<Concept>, List<Concept>, List<Concept>>
+    with $Provider<List<Concept>> {
+  HomeGridConceptsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'homeGridConceptsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$homeGridConceptsHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<Concept>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<Concept> create(Ref ref) {
+    return homeGridConcepts(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<Concept> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<Concept>>(value),
+    );
+  }
+}
+
+String _$homeGridConceptsHash() => r'185cac5f229df45c8af339cc38f201871cb49f3d';
