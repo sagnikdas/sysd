@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'streak_provider.dart';
+part of 'weak_areas_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,50 +9,51 @@ part of 'streak_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(Streak)
-final streakProvider = StreakProvider._();
+@ProviderFor(WeakAreas)
+final weakAreasProvider = WeakAreasProvider._();
 
-final class StreakProvider extends $NotifierProvider<Streak, StreakState> {
-  StreakProvider._()
+final class WeakAreasProvider
+    extends $NotifierProvider<WeakAreas, List<WeakArea>> {
+  WeakAreasProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'streakProvider',
+        name: r'weakAreasProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$streakHash();
+  String debugGetCreateSourceHash() => _$weakAreasHash();
 
   @$internal
   @override
-  Streak create() => Streak();
+  WeakAreas create() => WeakAreas();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(StreakState value) {
+  Override overrideWithValue(List<WeakArea> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<StreakState>(value),
+      providerOverride: $SyncValueProvider<List<WeakArea>>(value),
     );
   }
 }
 
-String _$streakHash() => r'3dee2c718097791c867d2f68e0e7dd9283beee04';
+String _$weakAreasHash() => r'08d013096eb287d226128ee6b01d162b26416297';
 
-abstract class _$Streak extends $Notifier<StreakState> {
-  StreakState build();
+abstract class _$WeakAreas extends $Notifier<List<WeakArea>> {
+  List<WeakArea> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<StreakState, StreakState>;
+    final ref = this.ref as $Ref<List<WeakArea>, List<WeakArea>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<StreakState, StreakState>,
-              StreakState,
+              AnyNotifier<List<WeakArea>, List<WeakArea>>,
+              List<WeakArea>,
               Object?,
               Object?
             >;

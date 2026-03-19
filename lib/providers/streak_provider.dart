@@ -6,8 +6,13 @@ part 'streak_provider.g.dart';
 class StreakState {
   final int count;
   final DateTime? lastStudyDate;
+  final DateTime? lastResetWarningShownOn; // midnight-local
 
-  const StreakState({this.count = 0, this.lastStudyDate});
+  const StreakState({
+    this.count = 0,
+    this.lastStudyDate,
+    this.lastResetWarningShownOn,
+  });
 }
 
 @riverpod
@@ -20,12 +25,19 @@ class Streak extends _$Streak {
     final count = _box.get('streak', defaultValue: 0) as int;
     final lastStr = _box.get('lastStudyDate') as String?;
     final lastDate = lastStr != null ? DateTime.tryParse(lastStr) : null;
-    return StreakState(count: count, lastStudyDate: lastDate);
+    final warnStr = _box.get('streakResetWarningShownOn') as String?;
+    final warnDate = warnStr != null ? DateTime.tryParse(warnStr) : null;
+
+    return StreakState(
+      count: count,
+      lastStudyDate: lastDate,
+      lastResetWarningShownOn: warnDate,
+    );
   }
 
   /// Call this when user completes a study action.
-  /// Returns true if streak was incremented (new day).
-  bool recordStudy() {
+  /// Returns new streak count if streak was incremented (new day), else null.
+  int? recordStudy() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final last = state.lastStudyDate;
@@ -34,7 +46,7 @@ class Streak extends _$Streak {
       final lastDay = DateTime(last.year, last.month, last.day);
       if (lastDay == today) {
         // Already studied today — no change
-        return false;
+        return null;
       }
       final yesterday = today.subtract(const Duration(days: 1));
       if (lastDay == yesterday) {
@@ -42,19 +54,30 @@ class Streak extends _$Streak {
         final newCount = state.count + 1;
         _persist(newCount, today);
         state = StreakState(count: newCount, lastStudyDate: today);
-        return true;
+        return newCount;
       }
     }
 
     // First study or missed a day — start at 1
     _persist(1, today);
     state = StreakState(count: 1, lastStudyDate: today);
-    return true;
+    return 1;
   }
 
   void reset() {
     _persist(0, null);
     state = const StreakState(count: 0);
+  }
+
+  void markResetWarningShownForToday() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    _box.put('streakResetWarningShownOn', today.toIso8601String());
+    state = StreakState(
+      count: state.count,
+      lastStudyDate: state.lastStudyDate,
+      lastResetWarningShownOn: today,
+    );
   }
 
   void _persist(int count, DateTime? date) {

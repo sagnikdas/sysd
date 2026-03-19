@@ -8,12 +8,14 @@ import '../../domain/models/concept.dart';
 import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
 import '../../providers/streak_provider.dart';
+import '../../providers/study_dates_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/spaced_repetition_provider.dart';
 import '../../providers/study_session_provider.dart';
 import 'widgets/swipeable_card.dart';
 import 'widgets/card_stack_effect.dart';
 import 'widgets/session_complete_sheet.dart';
+import 'widgets/streak_milestone_sheet.dart';
 
 class CardScreen extends ConsumerStatefulWidget {
   final String deckId;
@@ -31,6 +33,7 @@ class _CardScreenState extends ConsumerState<CardScreen>
   int _gotItCount = 0;
   late DateTime _startedAt;
   bool _streakRecorded = false;
+  int? _pendingStreakMilestone; // avoid overlapping modals on final card.
 
   late AnimationController _enterController;
   late Animation<double> _enterScale;
@@ -83,6 +86,10 @@ class _CardScreenState extends ConsumerState<CardScreen>
   void _reviewAndAdvance({required int quality, required bool markMastered}) {
     final concept = _cards[_currentIndex];
     final isPro = ref.read(subscriptionProvider) == SubscriptionTier.pro;
+    final willCompleteSession = _currentIndex + 1 >= _cards.length;
+
+    // Track activity for heatmap analytics.
+    ref.read(studyDatesProvider.notifier).recordCardReview();
 
     if (markMastered) {
       _gotItCount++;
@@ -109,8 +116,15 @@ class _CardScreenState extends ConsumerState<CardScreen>
 
     // Record streak on first swipe of the session
     if (!_streakRecorded) {
-      ref.read(streakProvider.notifier).recordStudy();
+      final newCount = ref.read(streakProvider.notifier).recordStudy();
       _streakRecorded = true;
+      if (newCount != null && (newCount == 7 || newCount == 30)) {
+        if (willCompleteSession) {
+          _pendingStreakMilestone = newCount;
+        } else {
+          _showStreakMilestone(newCount);
+        }
+      }
     }
 
     setState(() {
@@ -123,6 +137,15 @@ class _CardScreenState extends ConsumerState<CardScreen>
       _enterController.reset();
       _enterController.forward();
     }
+  }
+
+  void _showStreakMilestone(int streakCount) {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (_) => StreakMilestoneSheet(streakCount: streakCount),
+    );
   }
 
   void _onSwiped(SwipeDirection direction) {
@@ -144,7 +167,22 @@ class _CardScreenState extends ConsumerState<CardScreen>
         elapsed: elapsed,
         onDone: () {
           Navigator.of(context).pop();
-          context.go('/home');
+          final pending = _pendingStreakMilestone;
+          _pendingStreakMilestone = null;
+          if (pending != null) {
+            showModalBottomSheet(
+              context: context,
+              isDismissible: false,
+              enableDrag: false,
+              builder: (_) =>
+                  StreakMilestoneSheet(streakCount: pending),
+            ).whenComplete(() {
+              if (!mounted) return;
+              context.go('/home');
+            });
+          } else {
+            context.go('/home');
+          }
         },
       ),
     );

@@ -28,6 +28,7 @@ void main() async {
     Hive.openBox('profile'),
     Hive.openBox('settings'),
     Hive.openBox<String>('review_schedules'),
+    Hive.openBox<int>('study_dates'),
   ]);
 
   await _migrateLegacyUserName();
