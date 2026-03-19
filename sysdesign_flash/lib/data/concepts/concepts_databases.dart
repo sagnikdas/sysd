@@ -182,4 +182,154 @@ final conceptsDatabases = <Concept>[
     difficulty: Difficulty.beginner,
     tags: ['databases', 'redis', 'caching'],
   ),
+  Concept(
+    id: 26,
+    category: _cat,
+    color: _color,
+    icon: '🌳',
+    title: 'B-Tree & Database Indexes',
+    tagline: 'How indexes speed lookups',
+    diagram: '''
+  Table rows (heap)          B-Tree index on user_id
+  ┌────┬────────┐           ┌─────────────────────┐
+  │ id │ user_id│           │ 42 → ptr to row 3   │
+  ├────┼────────┤           │ 57 → ptr to row 1   │
+  │ 1  │   57   │           │ 91 → ptr to row 2   │
+  │ 2  │   91   │           └─────────────────────┘
+  │ 3  │   42   │           SELECT * WHERE user_id=42
+  └────┴────────┘           → O(log N) index seek + 1 row fetch''',
+    bullets: [
+      'Default B-tree (PostgreSQL B-tree) keeps keys sorted for range queries and equality',
+      'Index = smaller structure; trade-off: extra disk + slower writes (maintain tree)',
+      'Covering index: include columns in index so queries avoid heap lookups',
+      'Wrong index = full table scan — EXPLAIN ANALYZE to verify plans',
+      'Composite index column order matters: (a,b) helps WHERE a=? but not WHERE b=? alone',
+    ],
+    mnemonic: 'Index = sorted phone book for your column',
+    interviewQ: 'Why did our query get slow after we added more data?',
+    interviewA: 'Likely missing or unused index, or statistics drift. Check EXPLAIN: Seq Scan on large table means full scan. Add index on filter/join columns used in WHERE. Ensure ANALYZE runs after bulk loads. Watch for selective predicates — low cardinality columns (e.g. boolean) may not benefit. Consider partial indexes for hot subsets.',
+    difficulty: Difficulty.intermediate,
+    tags: ['databases', 'indexing', 'performance'],
+  ),
+  Concept(
+    id: 27,
+    category: _cat,
+    color: _color,
+    icon: '📑',
+    title: 'Read Replicas',
+    tagline: 'Scale reads, tolerate primary failure',
+    diagram: '''
+  Writes ──────► PRIMARY (source of truth)
+                    │
+         async/sync copy
+                    ▼
+    ┌───────────┬───────────┐
+    │ Replica 1 │ Replica 2 │
+    └───────────┘ └───────────┘
+         ▲              ▲
+         └──────┬───────┘
+            read traffic
+
+  Lag: replica may be milliseconds–seconds behind''',
+    bullets: [
+      'Primary handles writes; replicas replay WAL/binlog for read scaling',
+      'Replication lag: users may read stale data right after a write — design UX accordingly',
+      'Promote replica to primary on failover (manual or orchestrated — Patroni, RDS)',
+      'Read-your-writes: route same session to primary or use sync replica',
+      'Connection pooling: separate pools for read vs write endpoints',
+    ],
+    mnemonic: 'One writer, many readers — mind the lag',
+    interviewQ: 'How do you scale reads for a read-heavy product?',
+    interviewA: 'Add read replicas behind a load balancer; route analytics and list endpoints to replicas. Use streaming replication with monitoring on lag. For strong consistency after profile update, stick to primary for that user’s next read or use session affinity. Cache hot keys in Redis. Sharding is the next step when single primary can’t handle writes.',
+    difficulty: Difficulty.intermediate,
+    tags: ['databases', 'replication', 'scaling'],
+  ),
+  Concept(
+    id: 28,
+    category: _cat,
+    color: _color,
+    icon: '🔀',
+    title: 'Sharding Strategies',
+    tagline: 'Split data across many databases',
+    diagram: '''
+  Router / app layer
+        │
+   hash(user_id) % N
+        │
+   ┌────┼────┬────┐
+   ▼    ▼    ▼    ▼
+  DB0  DB1  DB2  DB3
+
+  Range shard (by region):
+  US ──► Shard A    EU ──► Shard B''',
+    bullets: [
+      'Hash sharding: even spread; range queries across shards are painful',
+      'Range/geo sharding: locality and range queries easier; hotspots if skewed',
+      'Shard key is permanent — wrong key causes expensive resharding',
+      'Cross-shard JOINs avoided: denormalize or fan-out queries + merge in app',
+      'Resharding: dual-write, backfill, cutover — use orchestration (Vitess, Cockroach)',
+    ],
+    mnemonic: 'Shard key picks your future pain or peace',
+    interviewQ: 'When do you shard a database?',
+    interviewA: 'When vertical scaling and replicas are exhausted — single-node CPU/IO or write throughput ceiling. Choose shard key with high cardinality and even access (e.g. user_id). Plan resharding story early. Avoid cross-shard transactions; use sagas or per-shard consistency. Start with fewer shards and split when metrics demand.',
+    difficulty: Difficulty.advanced,
+    tags: ['databases', 'sharding', 'scaling'],
+  ),
+  Concept(
+    id: 29,
+    category: _cat,
+    color: _color,
+    icon: '⚡',
+    title: 'DynamoDB Partition & Sort Keys',
+    tagline: 'Single-table design on AWS',
+    diagram: '''
+  PK (partition)     SK (sort)
+  USER#123          PROFILE
+  USER#123          ORDER#9001
+  USER#123          ORDER#9002
+
+  Hot partition if PK skew:
+  CELEB#1 ──► one partition overloads''',
+    bullets: [
+      'Partition key determines which node holds the row — hot keys throttle the table',
+      'Sort key enables range queries within a partition (e.g. orders by time)',
+      'GSI/LSI project alternate access patterns — each index has its own partition heat',
+      'Single-table design: encode entity type in SK to colocate related items',
+      'Understand RCU/WCU, bursts, and on-demand vs provisioned pricing',
+    ],
+    mnemonic: 'PK = which drawer; SK = order inside the drawer',
+    interviewQ: 'Why is our DynamoDB table throttling?',
+    interviewA: 'Hot partition: too many requests hit the same partition key. Redistribute — add random suffix to write-heavy keys and read with Query fan-out, or use write sharding pattern. Check adaptive capacity and on-demand mode. For GSI, skewed attributes become hot secondaries. Redesign access patterns so load spreads across many partition key values.',
+    difficulty: Difficulty.advanced,
+    tags: ['databases', 'dynamodb', 'aws'],
+  ),
+  Concept(
+    id: 30,
+    category: _cat,
+    color: _color,
+    icon: '🔒',
+    title: 'Isolation Levels & MVCC',
+    tagline: 'What concurrent transactions see',
+    diagram: '''
+  Tx1: BEGIN ... UPDATE balance ...
+  Tx2: BEGIN ... SELECT balance ...
+
+  READ COMMITTED: Tx2 sees only committed data
+  REPEATABLE READ: Tx2 snapshot at start — same read twice
+  SERIALIZABLE: as if transactions ran one-by-one
+
+  MVCC: keep row versions; readers don’t block writers''',
+    bullets: [
+      'Lower isolation = higher throughput, more anomalies (dirty read, phantom)',
+      'MVCC (PostgreSQL): snapshots avoid read locks; writers create new row versions',
+      'Pick default for OLTP (often READ COMMITTED); tighten only where bugs appear',
+      'Deadlocks: circular lock wait — DB picks victim and aborts one transaction',
+      'Long transactions hold versions → bloat and vacuum pressure',
+    ],
+    mnemonic: 'Stronger isolation = fewer surprises, more conflicts',
+    interviewQ: 'Explain phantom reads and how to prevent them',
+    interviewA: 'Phantom read: same query twice returns different row sets because another transaction inserted matching rows. Prevent with SERIALIZABLE or range locks (gap locks in MySQL InnoDB REPEATABLE READ). In PostgreSQL REPEATABLE READ, anomalies can still occur for some patterns — SERIALIZABLE uses SSI to detect conflicts. Often fix with explicit locking or idempotent unique constraints.',
+    difficulty: Difficulty.advanced,
+    tags: ['databases', 'transactions', 'consistency'],
+  ),
 ];
