@@ -7,6 +7,9 @@ import '../../domain/models/concept.dart';
 import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
 import '../../providers/streak_provider.dart';
+import '../../providers/subscription_provider.dart';
+import '../../providers/spaced_repetition_provider.dart';
+import '../../providers/study_session_provider.dart';
 import 'widgets/swipeable_card.dart';
 import 'widgets/card_stack_effect.dart';
 import 'widgets/session_complete_sheet.dart';
@@ -35,14 +38,26 @@ class _CardScreenState extends ConsumerState<CardScreen>
   @override
   void initState() {
     super.initState();
-    _startedAt = DateTime.now();
+    if (widget.deckId == 'smart') {
+      // Smart sessions are built by SM-2 queue prioritization.
+      final session = ref.read(studySessionProvider(maxNew: 5));
+      _startedAt = session.startedAt;
 
-    if (widget.deckId == 'all') {
-      _cards = List.of(allConcepts);
-    } else {
-      _cards = allConcepts
-          .where((c) => c.category == widget.deckId)
+      final conceptById = {for (final c in allConcepts) c.id: c};
+      _cards = session.cardOrder
+          .map((id) => conceptById[id])
+          .whereType<Concept>()
           .toList();
+    } else {
+      _startedAt = DateTime.now();
+
+      if (widget.deckId == 'all') {
+        _cards = List.of(allConcepts);
+      } else {
+        _cards = allConcepts
+            .where((c) => c.category == widget.deckId)
+            .toList();
+      }
     }
 
     _enterController = AnimationController(
@@ -67,9 +82,30 @@ class _CardScreenState extends ConsumerState<CardScreen>
   void _onSwiped(SwipeDirection direction) {
     final concept = _cards[_currentIndex];
 
+    final isPro = ref.read(subscriptionProvider) == SubscriptionTier.pro;
+    final quality = direction == SwipeDirection.right ? 4 : 1;
+
     if (direction == SwipeDirection.right) {
       _gotItCount++;
       ref.read(masteredProvider.notifier).markMastered(concept.id);
+    }
+
+    // SM-2 scheduling for Pro users.
+    if (isPro) {
+      final isLastCard = _currentIndex + 1 >= _cards.length;
+      final updatedSchedule =
+          ref.read(spacedRepetitionProvider.notifier).recordReview(
+                concept.id,
+                quality,
+              );
+
+      if (!isLastCard) {
+        final nextDate =
+            updatedSchedule.nextReview.toLocal().toIso8601String().split('T').first;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Next review: $nextDate')),
+        );
+      }
     }
 
     // Record streak on first swipe of the session

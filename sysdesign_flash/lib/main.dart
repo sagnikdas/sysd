@@ -27,6 +27,7 @@ void main() async {
     Hive.openBox<bool>('bookmarks'),
     Hive.openBox('profile'),
     Hive.openBox('settings'),
+    Hive.openBox<String>('review_schedules'),
   ]);
 
   await _migrateLegacyUserName();

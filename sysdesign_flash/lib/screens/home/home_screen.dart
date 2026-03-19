@@ -8,11 +8,13 @@ import '../../providers/home_grid_filters_provider.dart';
 import '../../providers/mastered_provider.dart';
 import '../../providers/streak_provider.dart';
 import '../../providers/user_prefs_provider.dart';
+import '../../shared/widgets/pro_gate.dart';
 import 'widgets/welcome_banner.dart';
 import 'widgets/category_filter_bar.dart';
 import 'widgets/concept_grid_card.dart';
 import 'widgets/difficulty_filter_bar.dart';
 import 'widgets/home_search_field.dart';
+import 'widgets/smart_queue_banner.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -102,6 +104,15 @@ class HomeScreen extends ConsumerWidget {
               dailyGoal: userPrefs.dailyGoal,
               masteredCount: mastered.length,
               totalCount: totalConcepts,
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          sliver: const SliverToBoxAdapter(
+            child: ProGate(
+              featureTitle: 'Smart Queue',
+              child: SmartQueueBanner(),
             ),
           ),
         ),

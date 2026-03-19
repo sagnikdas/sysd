@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
 import '../../providers/streak_provider.dart';
 import '../../providers/user_prefs_provider.dart';
+import '../../providers/subscription_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -38,6 +40,15 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text('${userPrefs.dailyGoal} cards / day'),
             onTap: () {},
           ),
+          if (kDebugMode)
+            SwitchListTile(
+              secondary: const Icon(Icons.workspace_premium_outlined),
+              title: const Text('Debug: Pro mode'),
+              value: ref.watch(subscriptionProvider) == SubscriptionTier.pro,
+              onChanged: (value) => ref
+                  .read(subscriptionProvider.notifier)
+                  .setTier(value ? SubscriptionTier.pro : SubscriptionTier.free),
+            ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.restore),
