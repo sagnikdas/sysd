@@ -7,10 +7,13 @@ import 'package:hive/hive.dart';
 import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
 import '../../providers/streak_provider.dart';
+import '../../providers/study_dates_provider.dart';
 import '../../providers/user_prefs_provider.dart';
 import '../../providers/subscription_provider.dart';
+import '../../providers/spaced_repetition_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
+import '../onboarding/widgets/goal_picker.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -86,7 +89,7 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.flag_outlined),
             title: const Text('Daily Goal'),
             subtitle: Text('${userPrefs.dailyGoal} cards / day'),
-            onTap: () {},
+            onTap: () => _pickDailyGoal(context, ref, userPrefs.dailyGoal),
           ),
           ListTile(
             leading: const Icon(Icons.notifications_none_outlined),
@@ -317,6 +320,39 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _pickDailyGoal(
+    BuildContext context,
+    WidgetRef ref,
+    int current,
+  ) async {
+    int selected = current;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Daily Goal'),
+          content: GoalPicker(
+            selectedGoal: selected,
+            onChanged: (g) => setState(() => selected = g),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed == true) {
+      ref.read(userPrefsProvider.notifier).setDailyGoal(selected);
+    }
+  }
+
   void _confirmReset(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
@@ -335,15 +371,19 @@ class SettingsScreen extends ConsumerWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            onPressed: () {
+            onPressed: () async {
               ref.read(masteredProvider.notifier).clearAll();
               ref.read(streakProvider.notifier).reset();
+              await ref.read(spacedRepetitionProvider.notifier).clearAll();
+              await ref.read(studyDatesProvider.notifier).clearAll();
               // Clear bookmarks too
               final bookmarkIds = ref.read(bookmarksProvider).toList();
               for (final id in bookmarkIds) {
                 ref.read(bookmarksProvider.notifier).toggle(id);
               }
+              if (!ctx.mounted) return;
               Navigator.of(ctx).pop();
+              if (!context.mounted) return;
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(const SnackBar(content: Text('Progress reset')));

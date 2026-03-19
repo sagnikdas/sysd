@@ -36,7 +36,7 @@ class SpacedRepetition extends _$SpacedRepetition {
         ReviewSchedule(
           conceptId: conceptId,
           // First review always schedules 1 day ahead per SM-2.
-          nextReview: DateTime.now(),
+          nextReview: DateTime.now().add(const Duration(days: 1)),
         );
 
     final updated = SM2.calculate(existing, quality);
@@ -54,6 +54,11 @@ class SpacedRepetition extends _$SpacedRepetition {
         .where((s) => !s.nextReview.isAfter(now))
         .map((s) => s.conceptId)
         .toList();
+  }
+
+  Future<void> clearAll() async {
+    await _box.clear();
+    state = {};
   }
 
   /// Concept IDs whose last response was weak (`lastQuality < 3`).

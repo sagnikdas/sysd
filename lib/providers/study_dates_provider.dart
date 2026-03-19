@@ -58,6 +58,16 @@ class StudyDates extends _$StudyDates {
     state = updated;
   }
 
+  Future<void> clearAll() async {
+    await _box.clear();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    state = List.generate(30, (i) {
+      final date = today.subtract(Duration(days: 29 - i));
+      return StudyDay(date: date, cardsReviewed: 0);
+    });
+  }
+
   static String _dateKey(DateTime date) {
     final d = DateTime(date.year, date.month, date.day);
     return d.toIso8601String().split('T').first;

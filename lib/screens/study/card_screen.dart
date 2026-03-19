@@ -108,21 +108,9 @@ class _CardScreenState extends ConsumerState<CardScreen>
 
     // SM-2 scheduling for Pro users.
     if (isPro) {
-      final isLastCard = _currentIndex + 1 >= _cards.length;
-      final updatedSchedule = ref
+      ref
           .read(spacedRepetitionProvider.notifier)
           .recordReview(concept.id, quality);
-
-      if (!isLastCard) {
-        final nextDate = updatedSchedule.nextReview
-            .toLocal()
-            .toIso8601String()
-            .split('T')
-            .first;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Next review: $nextDate')));
-      }
     }
 
     // Cloud sync is queued in background only for authenticated Pro users.

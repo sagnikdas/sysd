@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/subscription_provider.dart';
 
@@ -143,7 +144,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text('Start 7-day Free Trial - $selectedPrice'),
+                    : Text(
+                        _selectedPlan == _PaywallPlan.lifetime
+                            ? 'Buy Lifetime Access — $selectedPrice'
+                            : 'Start 7-day Free Trial — $selectedPrice',
+                      ),
               ),
             ),
             const SizedBox(height: 10),
@@ -160,14 +165,17 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               spacing: 8,
               children: [
                 TextButton(
-                  onPressed: () {},
+                  onPressed: _launchCancelSubscription,
                   child: const Text('Cancel anytime'),
                 ),
                 TextButton(
                   onPressed: _isPurchasing ? null : _restorePurchases,
                   child: const Text('Restore'),
                 ),
-                TextButton(onPressed: () {}, child: const Text('Privacy')),
+                TextButton(
+                  onPressed: _launchPrivacyPolicy,
+                  child: const Text('Privacy'),
+                ),
               ],
             ),
           ],
@@ -228,6 +236,22 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         setState(() => _isPurchasing = false);
       }
     }
+  }
+
+  Future<void> _launchPrivacyPolicy() async {
+    final uri = Uri.parse('https://sysdesignflash.dev/privacy');
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
+  Future<void> _launchCancelSubscription() async {
+    // iOS: deep-link to App Store subscriptions; Android: Google Play.
+    final iosUri = Uri.parse('https://apps.apple.com/account/subscriptions');
+    final androidUri = Uri.parse(
+      'https://play.google.com/store/account/subscriptions',
+    );
+    final uri =
+        Theme.of(context).platform == TargetPlatform.iOS ? iosUri : androidUri;
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   SubscriptionPlan _mapPlanToSubscriptionPlan(_PaywallPlan plan) {
