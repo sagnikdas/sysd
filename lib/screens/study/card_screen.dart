@@ -93,7 +93,7 @@ class _CardScreenState extends ConsumerState<CardScreen>
     super.dispose();
   }
 
-  void _reviewAndAdvance({required int quality, required bool markMastered}) {
+  Future<void> _reviewAndAdvance({required int quality, required bool markMastered}) async {
     final concept = _cards[_currentIndex];
     final isPro = ref.read(subscriptionProvider) == SubscriptionTier.pro;
     final willCompleteSession = _currentIndex + 1 >= _cards.length;
@@ -120,7 +120,7 @@ class _CardScreenState extends ConsumerState<CardScreen>
 
     // Record streak on first swipe of the session
     if (!_streakRecorded) {
-      final newCount = ref.read(streakProvider.notifier).recordStudy();
+      final newCount = await ref.read(streakProvider.notifier).recordStudy();
       _streakRecorded = true;
       if (newCount != null && (newCount == 7 || newCount == 30)) {
         if (willCompleteSession) {
@@ -165,11 +165,13 @@ class _CardScreenState extends ConsumerState<CardScreen>
       context: context,
       isDismissible: false,
       enableDrag: false,
-      builder: (_) => SessionCompleteSheet(
-        totalCards: _cards.length,
-        gotItCount: _gotItCount,
-        elapsed: elapsed,
-        onDone: () {
+      builder: (_) => PopScope(
+        canPop: false,
+        child: SessionCompleteSheet(
+          totalCards: _cards.length,
+          gotItCount: _gotItCount,
+          elapsed: elapsed,
+          onDone: () {
           Navigator.of(context).pop();
           final completedSessions = _incrementCompletedSessionsCount();
           final isPro = ref.read(subscriptionProvider) == SubscriptionTier.pro;
@@ -194,7 +196,8 @@ class _CardScreenState extends ConsumerState<CardScreen>
               isPro: isPro,
             );
           }
-        },
+          },
+        ),
       ),
     );
   }
@@ -249,7 +252,12 @@ class _CardScreenState extends ConsumerState<CardScreen>
     final mastered = ref.watch(masteredProvider);
     final isSmartDeck = widget.deckId == 'smart' && widget.conceptIds == null;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !isComplete,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && isComplete) context.go('/home');
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: isComplete
             ? const Text('Done!')
@@ -352,6 +360,7 @@ class _CardScreenState extends ConsumerState<CardScreen>
                 ),
               ],
             ),
+      ),
     );
   }
 }

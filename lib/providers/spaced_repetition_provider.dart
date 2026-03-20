@@ -58,6 +58,7 @@ class SpacedRepetition extends _$SpacedRepetition {
 
   Future<void> clearAll() async {
     await _box.clear();
+    if (!ref.mounted) return;
     state = {};
   }
 

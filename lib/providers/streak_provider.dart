@@ -37,7 +37,7 @@ class Streak extends _$Streak {
 
   /// Call this when user completes a study action.
   /// Returns new streak count if streak was incremented (new day), else null.
-  int? recordStudy() {
+  Future<int?> recordStudy() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final last = state.lastStudyDate;
@@ -52,20 +52,20 @@ class Streak extends _$Streak {
       if (lastDay == yesterday) {
         // Studied yesterday — increment
         final newCount = state.count + 1;
-        _persist(newCount, today);
+        await _persist(newCount, today);
         state = StreakState(count: newCount, lastStudyDate: today);
         return newCount;
       }
     }
 
     // First study or missed a day — start at 1
-    _persist(1, today);
+    await _persist(1, today);
     state = StreakState(count: 1, lastStudyDate: today);
     return 1;
   }
 
-  void reset() {
-    _persist(0, null);
+  Future<void> reset() async {
+    await _persist(0, null);
     state = const StreakState(count: 0);
   }
 
@@ -80,12 +80,12 @@ class Streak extends _$Streak {
     );
   }
 
-  void _persist(int count, DateTime? date) {
-    _box.put('streak', count);
+  Future<void> _persist(int count, DateTime? date) async {
+    await _box.put('streak', count);
     if (date != null) {
-      _box.put('lastStudyDate', date.toIso8601String());
+      await _box.put('lastStudyDate', date.toIso8601String());
     } else {
-      _box.delete('lastStudyDate');
+      await _box.delete('lastStudyDate');
     }
   }
 }

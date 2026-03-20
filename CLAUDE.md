@@ -46,6 +46,7 @@ lib/
 ├── providers/        # All Riverpod providers; *.g.dart files are code-generated — do not edit
 ├── services/         # AuthService, BillingService, SyncService, NotificationService
 ├── screens/          # One folder per screen; widgets/ subfolder for screen-local widgets
+│   # Folders: auth/, home/, onboarding/, paywall/, progress/, settings/, simulation/, splash/, study/
 └── shared/widgets/   # AppScaffold (bottom nav shell), ProGate, EmptyState
 ```
 
@@ -68,6 +69,13 @@ All providers use `@riverpod` codegen. After editing any provider file, run `bui
 | `streakProvider` | Hive/SharedPrefs | Auto-resets on missed day |
 | `studySessionProvider` | In-memory | Current session state |
 | `conceptsProvider` | Static | Derived from `allConcepts` |
+| `authProvider` | Supabase session | Manages auth state |
+| `deckFilterProvider` | In-memory | Filters concepts by category |
+| `homeGridFiltersProvider` | In-memory | Filters and search on home screen |
+| `readinessScoreProvider` | Derived | Computed from mastered + spaced repetition data |
+| `studyDatesProvider` | Hive | Tracks study history dates |
+| `userPrefsProvider` | SharedPrefs | Theme, daily goal, reminders |
+| `weakAreasProvider` | Derived | Identifies weak categories from review history |
 
 Writes always go to Hive first (optimistic). Background sync to Supabase is triggered via `SyncService` for Pro users only.
 
@@ -83,7 +91,7 @@ Writes always go to Hive first (optimistic). Background sync to Supabase is trig
 
 ### Content data
 
-`allConcepts` in `lib/data/all_concepts.dart` is the single source of truth — it aggregates 13 category list files. Each `Concept` has `id` (int), `category`, `title`, `difficulty`, and tab content: `diagramAscii`, `keyPoints` (list), `interviewQuestion`/`interviewAnswer`. `allCategories` returns categories in canonical display order.
+`allConcepts` in `lib/data/all_concepts.dart` is the single source of truth — it aggregates 13 category list files. Each `Concept` has: `id` (int), `category`, `color`, `icon`, `title`, `tagline`, `difficulty`, `tags` (list), `diagram` (ASCII art), `bullets` (key points list), `mnemonic`, `interviewQ`, `interviewA`. `allCategories` returns categories in canonical display order.
 
 ### Key algorithms
 

@@ -23,4 +23,10 @@ class Bookmarks extends _$Bookmarks {
       state = {...state, conceptId};
     }
   }
+
+  Future<void> clearAll() async {
+    await _box.clear();
+    if (!ref.mounted) return;
+    state = {};
+  }
 }

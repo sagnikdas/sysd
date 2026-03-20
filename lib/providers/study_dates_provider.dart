@@ -60,6 +60,7 @@ class StudyDates extends _$StudyDates {
 
   Future<void> clearAll() async {
     await _box.clear();
+    if (!ref.mounted) return;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     state = List.generate(30, (i) {

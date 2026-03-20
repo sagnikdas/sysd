@@ -209,7 +209,7 @@ class SettingsScreen extends ConsumerWidget {
               'Reset Progress',
               style: TextStyle(color: theme.colorScheme.error),
             ),
-            subtitle: const Text('Clear all mastered cards and streak'),
+            subtitle: const Text('Clear all progress, bookmarks, and streak'),
             onTap: () => _confirmReset(context, ref),
           ),
           const Divider(),
@@ -421,8 +421,8 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Reset Progress?'),
         content: const Text(
-          'This will clear all mastered cards, bookmarks, and your streak. '
-          'This action cannot be undone.',
+          'This will clear all mastered cards, bookmarks, spaced repetition '
+          'data, and your streak. This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -434,15 +434,11 @@ class SettingsScreen extends ConsumerWidget {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () async {
-              ref.read(masteredProvider.notifier).clearAll();
-              ref.read(streakProvider.notifier).reset();
+              await ref.read(masteredProvider.notifier).clearAll();
+              await ref.read(streakProvider.notifier).reset();
               await ref.read(spacedRepetitionProvider.notifier).clearAll();
               await ref.read(studyDatesProvider.notifier).clearAll();
-              // Clear bookmarks too
-              final bookmarkIds = ref.read(bookmarksProvider).toList();
-              for (final id in bookmarkIds) {
-                ref.read(bookmarksProvider.notifier).toggle(id);
-              }
+              await ref.read(bookmarksProvider.notifier).clearAll();
               if (!ctx.mounted) return;
               Navigator.of(ctx).pop();
               if (!context.mounted) return;

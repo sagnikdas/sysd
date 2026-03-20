@@ -31,8 +31,9 @@ class Mastered extends _$Mastered {
     }
   }
 
-  void clearAll() {
-    _box.clear();
+  Future<void> clearAll() async {
+    await _box.clear();
+    if (!ref.mounted) return;
     state = {};
   }
 }
