@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -8,7 +9,6 @@ class NotificationService {
   static final NotificationService instance = NotificationService._();
 
   static const int _dailyBaseId = 1000;
-  static const int _trialExpiryId = 2000;
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -19,6 +19,11 @@ class NotificationService {
     if (_initialized) return;
 
     tz.initializeTimeZones();
+
+    // Set tz.local to the device's actual timezone so scheduled times
+    // are correct for every user, not just those in UTC.
+    final localTz = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(localTz));
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwinInit = DarwinInitializationSettings(
@@ -35,18 +40,29 @@ class NotificationService {
     _initialized = true;
   }
 
-  Future<void> requestPermissions() async {
+  /// Returns true if notification posting is permitted, false if denied.
+  /// Also attempts to request exact-alarm permission on Android 12 so that
+  /// reminders fire at the precise time the user chose.
+  Future<bool> requestPermissions() async {
     await initialize();
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.requestNotificationsPermission();
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
+
+    final android = _plugin.resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin
+    >();
+    final ios = _plugin.resolvePlatformSpecificImplementation<
+      IOSFlutterLocalNotificationsPlugin
+    >();
+
+    final androidGranted = await android?.requestNotificationsPermission();
+    final iosGranted = await ios?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // On platforms where neither plugin applies (macOS etc.) treat as granted.
+    if (androidGranted == null && iosGranted == null) return true;
+    return (androidGranted ?? true) && (iosGranted ?? true);
   }
 
   Future<void> cancelDailyReminders() async {
@@ -66,11 +82,21 @@ class NotificationService {
     await initialize();
     await cancelDailyReminders();
 
+    // Use exact scheduling when the OS permits it; fall back to inexact
+    // (which the OS may delay by a few minutes) rather than silently failing.
+    final android = _plugin.resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin
+    >();
+    final canExact = await android?.canScheduleExactNotifications() ?? true;
+    final scheduleMode = canExact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexact;
+
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'daily_study_reminders',
         'Daily study reminders',
-        channelDescription: 'Pro study reminders at your chosen time',
+        channelDescription: 'Daily nudge to keep your study streak going',
         importance: Importance.high,
         priority: Priority.high,
       ),
@@ -84,50 +110,10 @@ class NotificationService {
         body,
         scheduled,
         details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: scheduleMode,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       );
     }
-  }
-
-  Future<void> scheduleTrialExpiryReminder({
-    required DateTime trialStart,
-    String title = 'Trial ending soon',
-    String body = 'Your trial ends tomorrow. Keep your momentum with Pro.',
-  }) async {
-    await initialize();
-
-    final reminderAt = trialStart.add(const Duration(days: 6));
-    final reminder = tz.TZDateTime.from(
-      DateTime(reminderAt.year, reminderAt.month, reminderAt.day, 10),
-      tz.local,
-    );
-
-    if (reminder.isBefore(tz.TZDateTime.now(tz.local))) return;
-
-    const details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'trial_expiry_reminders',
-        'Trial expiry reminders',
-        channelDescription: 'Reminder before free trial ends',
-        importance: Importance.high,
-        priority: Priority.high,
-      ),
-    );
-
-    await _plugin.zonedSchedule(
-      _trialExpiryId,
-      title,
-      body,
-      reminder,
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-  }
-
-  Future<void> cancelTrialExpiryReminder() async {
-    await initialize();
-    await _plugin.cancel(_trialExpiryId);
   }
 
   int _dailyNotificationId(int weekday) => _dailyBaseId + weekday;

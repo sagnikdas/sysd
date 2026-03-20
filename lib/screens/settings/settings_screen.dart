@@ -14,11 +14,40 @@ import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../onboarding/widgets/goal_picker.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Called when the app returns to foreground (e.g. after the user visits
+  /// the system Alarms & Reminders settings page on Android 12).
+  /// Re-syncs the notification schedule so that if exact-alarm permission
+  /// was just granted, the reminders upgrade from inexact → exact.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncNotificationSchedules(ref);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final userPrefs = ref.watch(userPrefsProvider);
     final authState = ref.watch(authControllerProvider);
@@ -224,14 +253,28 @@ class SettingsScreen extends ConsumerWidget {
     required bool enabled,
   }) async {
     final prefsNotifier = ref.read(userPrefsProvider.notifier);
-    prefsNotifier.setRemindersEnabled(enabled);
 
     if (!enabled) {
+      prefsNotifier.setRemindersEnabled(false);
       await NotificationService.instance.cancelDailyReminders();
       return;
     }
 
-    await NotificationService.instance.requestPermissions();
+    final granted = await NotificationService.instance.requestPermissions();
+    if (!context.mounted) return;
+
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notification permission denied. Enable it in device Settings.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    prefsNotifier.setRemindersEnabled(true);
     await _syncNotificationSchedules(ref);
     if (!context.mounted) return;
     ScaffoldMessenger.of(
