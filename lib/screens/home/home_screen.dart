@@ -344,8 +344,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return ConceptGridCard(
                   concept: concept,
                   isMastered: mastered.contains(concept.id),
-                  onTap: () =>
-                      context.push('/study/concepts', extra: [concept.id]),
+                  onTap: () {
+                    final categoryList = ref.read(
+                      filteredConceptsProvider(concept.category),
+                    );
+                    final startIdx = categoryList.indexWhere(
+                      (c) => c.id == concept.id,
+                    );
+                    final ids = categoryList
+                        .sublist(startIdx < 0 ? 0 : startIdx)
+                        .map((c) => c.id)
+                        .toList();
+                    context.push('/study/concepts', extra: ids);
+                  },
                 );
               }, childCount: concepts.length),
             ),

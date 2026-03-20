@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
@@ -229,14 +230,22 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.feedback_outlined),
             title: const Text('Send Feedback'),
-            subtitle: const Text('hello@sysdesignflash.dev'),
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Email hello@sysdesignflash.dev with your feedback.',
-                ),
-              ),
-            ),
+            subtitle: const Text('sagnikd91@gmail.com'),
+            onTap: () async {
+              final uri = Uri.parse(
+                'mailto:sagnikd91@gmail.com?subject=${Uri.encodeComponent('SysDesign Flash: Feedback')}',
+              );
+              if (!await launchUrl(uri)) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Could not open mail app. Email sagnikd91@gmail.com directly.',
+                    ),
+                  ),
+                );
+              }
+            },
           ),
         ],
       ),
