@@ -131,6 +131,7 @@ class ProgressScreen extends ConsumerWidget {
                   mastered: catMastered,
                   total: catConcepts.length,
                   delay: index * 50,
+                  onTap: () => context.push('/study/$category'),
                 ),
               );
             }, childCount: categories.length),

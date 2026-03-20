@@ -24,6 +24,7 @@ class SettingsScreen extends ConsumerWidget {
     final userPrefs = ref.watch(userPrefsProvider);
     final tier = ref.watch(subscriptionProvider);
     final authState = ref.watch(authControllerProvider);
+    final bookmarks = ref.watch(bookmarksProvider);
     final displayLabel = userPrefs.displayName.trim().isEmpty
         ? 'Not set'
         : userPrefs.displayName.trim();
@@ -36,6 +37,8 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.person_outline),
             title: const Text('Display name'),
             subtitle: Text(displayLabel),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: () => _editDisplayName(context, ref, userPrefs.displayName),
           ),
           ListTile(
             leading: const Icon(Icons.cloud_sync_outlined),
@@ -84,6 +87,21 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.bookmark_outline),
+            title: const Text('Bookmarks'),
+            subtitle: Text(
+              bookmarks.isEmpty
+                  ? 'No bookmarked cards'
+                  : '${bookmarks.length} card${bookmarks.length == 1 ? '' : 's'}',
+            ),
+            trailing: bookmarks.isNotEmpty
+                ? const Icon(Icons.chevron_right)
+                : null,
+            onTap: bookmarks.isNotEmpty
+                ? () => context.push('/study/concepts', extra: bookmarks.toList())
+                : null,
           ),
           ListTile(
             leading: const Icon(Icons.flag_outlined),
@@ -325,6 +343,43 @@ class SettingsScreen extends ConsumerWidget {
         trialStart: trialStartedAt,
       );
     }
+  }
+
+  Future<void> _editDisplayName(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final controller = TextEditingController(text: current.trim());
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Display name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 40,
+          decoration: const InputDecoration(hintText: 'Your name'),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      ref
+          .read(userPrefsProvider.notifier)
+          .setDisplayName(controller.text.trim());
+    }
+    controller.dispose();
   }
 
   Future<void> _pickDailyGoal(
