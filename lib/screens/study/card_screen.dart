@@ -247,9 +247,6 @@ class _CardScreenState extends ConsumerState<CardScreen>
     final subscriptionTier = ref.watch(subscriptionProvider);
     final bookmarks = ref.watch(bookmarksProvider);
     final mastered = ref.watch(masteredProvider);
-    final isAllMastered =
-        _cards.isNotEmpty &&
-        _cards.every((concept) => mastered.contains(concept.id));
     final isSmartDeck = widget.deckId == 'smart' && widget.conceptIds == null;
 
     return Scaffold(
@@ -288,16 +285,6 @@ class _CardScreenState extends ConsumerState<CardScreen>
               title: 'All caught up!',
               subtitle:
                   'No cards are due today. Come back later for your next review.',
-            )
-          : isAllMastered && !isSmartDeck
-          ? EmptyState(
-              icon: Icons.celebration_outlined,
-              title: "You've mastered everything!",
-              subtitle: 'Amazing streak. Keep revisiting cards to stay sharp.',
-              action: FilledButton(
-                onPressed: () => context.go('/home'),
-                child: const Text('Back to Home'),
-              ),
             )
           : Column(
               children: [

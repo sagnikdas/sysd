@@ -30,6 +30,12 @@ class _HomeSearchFieldState extends ConsumerState<HomeSearchField> {
   @override
   Widget build(BuildContext context) {
     final q = ref.watch(homeSearchQueryProvider);
+
+    // Keep controller in sync if query is cleared externally (e.g. AppBar X).
+    if (_controller.text != q) {
+      _controller.value = _controller.value.copyWith(text: q);
+    }
+
     return SearchBar(
       hintText: 'Search title, category, or tags',
       controller: _controller,
@@ -41,6 +47,7 @@ class _HomeSearchFieldState extends ConsumerState<HomeSearchField> {
             onPressed: () {
               _controller.clear();
               ref.read(homeSearchQueryProvider.notifier).clear();
+              ref.read(homeSearchExpandedProvider.notifier).setExpanded(false);
             },
           ),
       ],

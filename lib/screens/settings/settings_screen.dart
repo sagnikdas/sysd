@@ -379,7 +379,7 @@ class SettingsScreen extends ConsumerWidget {
           .read(userPrefsProvider.notifier)
           .setDisplayName(controller.text.trim());
     }
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
   }
 
   Future<void> _pickDailyGoal(
