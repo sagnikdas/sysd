@@ -40,7 +40,7 @@ final class StreakProvider extends $NotifierProvider<Streak, StreakState> {
   }
 }
 
-String _$streakHash() => r'3dee2c718097791c867d2f68e0e7dd9283beee04';
+String _$streakHash() => r'd159e1f272812f294dfeb3f31b6b5276386dcfe1';
 
 abstract class _$Streak extends $Notifier<StreakState> {
   StreakState build();

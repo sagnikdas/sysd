@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive/hive.dart';
 
 import '../../data/all_concepts.dart';
 import '../../domain/models/concept.dart';
@@ -10,7 +9,6 @@ import '../../providers/mastered_provider.dart';
 import '../../providers/bookmarks_provider.dart';
 import '../../providers/streak_provider.dart';
 import '../../providers/study_dates_provider.dart';
-import '../../providers/subscription_provider.dart';
 import '../../providers/spaced_repetition_provider.dart';
 import '../../providers/study_session_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -95,7 +93,6 @@ class _CardScreenState extends ConsumerState<CardScreen>
 
   Future<void> _reviewAndAdvance({required int quality, required bool markMastered}) async {
     final concept = _cards[_currentIndex];
-    final isPro = ref.read(subscriptionProvider) == SubscriptionTier.pro;
     final willCompleteSession = _currentIndex + 1 >= _cards.length;
 
     // Track activity for heatmap analytics.
@@ -106,17 +103,13 @@ class _CardScreenState extends ConsumerState<CardScreen>
       ref.read(masteredProvider.notifier).markMastered(concept.id);
     }
 
-    // SM-2 scheduling for Pro users.
-    if (isPro) {
-      ref
-          .read(spacedRepetitionProvider.notifier)
-          .recordReview(concept.id, quality);
-    }
-
-    // Cloud sync is queued in background only for authenticated Pro users.
+    // SM-2 scheduling for all users.
     ref
-        .read(syncServiceProvider)
-        .queueProgressSync(tier: ref.read(subscriptionProvider));
+        .read(spacedRepetitionProvider.notifier)
+        .recordReview(concept.id, quality);
+
+    // Cloud sync queued in background for authenticated users.
+    ref.read(syncServiceProvider).queueProgressSync();
 
     // Record streak on first swipe of the session
     if (!_streakRecorded) {
@@ -173,8 +166,6 @@ class _CardScreenState extends ConsumerState<CardScreen>
           elapsed: elapsed,
           onDone: () {
           Navigator.of(context).pop();
-          final completedSessions = _incrementCompletedSessionsCount();
-          final isPro = ref.read(subscriptionProvider) == SubscriptionTier.pro;
           final pending = _pendingStreakMilestone;
           _pendingStreakMilestone = null;
           if (pending != null) {
@@ -185,16 +176,10 @@ class _CardScreenState extends ConsumerState<CardScreen>
               builder: (_) => StreakMilestoneSheet(streakCount: pending),
             ).whenComplete(() {
               if (!mounted) return;
-              _completeSessionNavigation(
-                completedSessions: completedSessions,
-                isPro: isPro,
-              );
+              _completeSessionNavigation();
             });
           } else {
-            _completeSessionNavigation(
-              completedSessions: completedSessions,
-              isPro: isPro,
-            );
+            _completeSessionNavigation();
           }
           },
         ),
@@ -202,42 +187,8 @@ class _CardScreenState extends ConsumerState<CardScreen>
     );
   }
 
-  int _incrementCompletedSessionsCount() {
-    final settingsBox = Hive.box('settings');
-    final current = settingsBox.get(
-      'completed_sessions_count',
-      defaultValue: 0,
-    );
-    final count = current is int ? current + 1 : 1;
-    settingsBox.put('completed_sessions_count', count);
-    return count;
-  }
-
-  void _completeSessionNavigation({
-    required int completedSessions,
-    required bool isPro,
-  }) {
+  void _completeSessionNavigation() {
     if (!mounted) return;
-
-    final shouldShowNudge = !isPro && completedSessions % 5 == 0;
-    if (shouldShowNudge) {
-      showModalBottomSheet(
-        context: context,
-        showDragHandle: true,
-        builder: (_) => _SessionEndProNudge(
-          onTryPro: () {
-            Navigator.of(context).pop();
-            context.go('/paywall');
-          },
-          onContinueFree: () {
-            Navigator.of(context).pop();
-            context.go('/home');
-          },
-        ),
-      );
-      return;
-    }
-
     context.go('/home');
   }
 
@@ -247,9 +198,7 @@ class _CardScreenState extends ConsumerState<CardScreen>
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final isComplete = _currentIndex >= _cards.length;
-    final subscriptionTier = ref.watch(subscriptionProvider);
     final bookmarks = ref.watch(bookmarksProvider);
-    final mastered = ref.watch(masteredProvider);
     final isSmartDeck = widget.deckId == 'smart' && widget.conceptIds == null;
 
     return PopScope(
@@ -264,7 +213,7 @@ class _CardScreenState extends ConsumerState<CardScreen>
             : Text('${_currentIndex + 1} / ${_cards.length}'),
         actions: [
           if (!isComplete) ...[
-            if (kDebugMode && subscriptionTier == SubscriptionTier.pro) ...[
+            if (kDebugMode) ...[
               IconButton(
                 tooltip: 'Quality 0 (Fail)',
                 icon: const Icon(Icons.broken_image_outlined),
@@ -365,58 +314,3 @@ class _CardScreenState extends ConsumerState<CardScreen>
   }
 }
 
-class _SessionEndProNudge extends StatelessWidget {
-  final VoidCallback onTryPro;
-  final VoidCallback onContinueFree;
-
-  const _SessionEndProNudge({
-    required this.onTryPro,
-    required this.onContinueFree,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'You are on a roll',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Pro users master concepts 3x faster with smart queues and targeted reviews.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: onTryPro,
-                child: const Text('Try Pro free for 7 days'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: onContinueFree,
-                child: const Text('Continue without Pro'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

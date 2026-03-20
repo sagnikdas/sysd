@@ -40,7 +40,7 @@ final class BookmarksProvider extends $NotifierProvider<Bookmarks, Set<int>> {
   }
 }
 
-String _$bookmarksHash() => r'599f344d1e25ac25692d8308985d6a39dcd14456';
+String _$bookmarksHash() => r'988adecea097294474e93c8579d8d9fe1936f82a';
 
 abstract class _$Bookmarks extends $Notifier<Set<int>> {
   Set<int> build();

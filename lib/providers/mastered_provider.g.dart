@@ -40,7 +40,7 @@ final class MasteredProvider extends $NotifierProvider<Mastered, Set<int>> {
   }
 }
 
-String _$masteredHash() => r'cd705260d6c90613c52547e44b69d532f354c412';
+String _$masteredHash() => r'c59897c3375a907d1e1926ca364bd7cdc92cc358';
 
 abstract class _$Mastered extends $Notifier<Set<int>> {
   Set<int> build();

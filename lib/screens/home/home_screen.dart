@@ -7,12 +7,10 @@ import '../../providers/deck_filter_provider.dart';
 import '../../providers/home_grid_filters_provider.dart';
 import '../../providers/mastered_provider.dart';
 import '../../providers/streak_provider.dart';
-import '../../providers/subscription_provider.dart';
 import '../../providers/weak_areas_provider.dart';
 import '../../providers/user_prefs_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/empty_state.dart';
-import '../../shared/widgets/pro_gate.dart';
 import 'widgets/welcome_banner.dart';
 import 'widgets/category_filter_bar.dart';
 import 'widgets/concept_grid_card.dart';
@@ -73,21 +71,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Mark immediately to prevent double-popping due to rebuilds.
     ref.read(streakProvider.notifier).markResetWarningShownForToday();
 
-    final subscriptionTier = ref.read(subscriptionProvider);
     showModalBottomSheet(
       context: context,
       isDismissible: false,
       enableDrag: false,
       builder: (_) => StreakResetWarningSheet(
         streakCount: streak.count,
-        isPro: subscriptionTier == SubscriptionTier.pro,
         onStart: () {
           Navigator.of(context).pop();
-          context.push(
-            subscriptionTier == SubscriptionTier.pro
-                ? '/study/smart'
-                : '/study/all',
-          );
+          context.push('/study/smart');
         },
       ),
     );
@@ -106,7 +98,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final totalConcepts = ref.watch(conceptsProvider).length;
     final mastered = ref.watch(masteredProvider);
     final streak = ref.watch(streakProvider);
-    final subscriptionTier = ref.watch(subscriptionProvider);
     final weakAreas = ref.watch(weakAreasProvider);
     final userPrefs = ref.watch(userPrefsProvider);
 
@@ -196,29 +187,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          sliver: const SliverToBoxAdapter(
-            child: ProGate(
-              featureTitle: 'Smart Queue',
-              featureDescription:
-                  'Prioritize due, weak, and new cards with SM-2 scheduling.',
-              child: SmartQueueBanner(),
-            ),
-          ),
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+          sliver: SliverToBoxAdapter(child: SmartQueueBanner()),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          sliver: const SliverToBoxAdapter(
-            child: ProGate(
-              featureTitle: 'Interview Simulation',
-              featureDescription:
-                  'Run timed scenarios with hints and post-session review.',
-              child: InterviewSimulationBanner(),
-            ),
-          ),
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+          sliver: SliverToBoxAdapter(child: InterviewSimulationBanner()),
         ),
-        if (subscriptionTier == SubscriptionTier.pro && weakAreas.isNotEmpty)
+        if (weakAreas.isNotEmpty)
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             sliver: SliverToBoxAdapter(

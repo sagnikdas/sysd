@@ -8,101 +8,22 @@ part of 'subscription_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Always returns [SubscriptionTier.pro] — the app is fully free.
 
-@ProviderFor(subscriptionRepository)
-final subscriptionRepositoryProvider = SubscriptionRepositoryProvider._();
-
-final class SubscriptionRepositoryProvider
-    extends
-        $FunctionalProvider<
-          SubscriptionRepository,
-          SubscriptionRepository,
-          SubscriptionRepository
-        >
-    with $Provider<SubscriptionRepository> {
-  SubscriptionRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'subscriptionRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$subscriptionRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<SubscriptionRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  SubscriptionRepository create(Ref ref) {
-    return subscriptionRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SubscriptionRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<SubscriptionRepository>(value),
-    );
-  }
-}
-
-String _$subscriptionRepositoryHash() =>
-    r'e47f644d7618857b56c642af03f4a6c1b74273ea';
-
-@ProviderFor(billingProducts)
-final billingProductsProvider = BillingProductsProvider._();
-
-final class BillingProductsProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<ProductDetails>>,
-          List<ProductDetails>,
-          FutureOr<List<ProductDetails>>
-        >
-    with
-        $FutureModifier<List<ProductDetails>>,
-        $FutureProvider<List<ProductDetails>> {
-  BillingProductsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'billingProductsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$billingProductsHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<ProductDetails>> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<ProductDetails>> create(Ref ref) {
-    return billingProducts(ref);
-  }
-}
-
-String _$billingProductsHash() => r'5dc19153bf3b427a4a7fbc44000c4e7e9f31eda7';
-
-@ProviderFor(Subscription)
+@ProviderFor(subscription)
 final subscriptionProvider = SubscriptionProvider._();
 
+/// Always returns [SubscriptionTier.pro] — the app is fully free.
+
 final class SubscriptionProvider
-    extends $NotifierProvider<Subscription, SubscriptionTier> {
+    extends
+        $FunctionalProvider<
+          SubscriptionTier,
+          SubscriptionTier,
+          SubscriptionTier
+        >
+    with $Provider<SubscriptionTier> {
+  /// Always returns [SubscriptionTier.pro] — the app is fully free.
   SubscriptionProvider._()
     : super(
         from: null,
@@ -119,7 +40,13 @@ final class SubscriptionProvider
 
   @$internal
   @override
-  Subscription create() => Subscription();
+  $ProviderElement<SubscriptionTier> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SubscriptionTier create(Ref ref) {
+    return subscription(ref);
+  }
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(SubscriptionTier value) {
@@ -130,22 +57,4 @@ final class SubscriptionProvider
   }
 }
 
-String _$subscriptionHash() => r'779054b3ce7caf8e77859d925bda88e099451ba4';
-
-abstract class _$Subscription extends $Notifier<SubscriptionTier> {
-  SubscriptionTier build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<SubscriptionTier, SubscriptionTier>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<SubscriptionTier, SubscriptionTier>,
-              SubscriptionTier,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
+String _$subscriptionHash() => r'795ecdde6aef4ad83f0d440e9afe47949ee542d6';

@@ -66,7 +66,7 @@ final class StudySessionProvider
   }
 }
 
-String _$studySessionHash() => r'58a99ede2d828cf2bde7cfed0691299e868be271';
+String _$studySessionHash() => r'6c1275ab866240620e353e253fac7bc269fffd00';
 
 final class StudySessionFamily extends $Family
     with $FunctionalFamilyOverride<StudySession, int> {

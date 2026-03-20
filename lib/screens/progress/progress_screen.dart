@@ -6,7 +6,6 @@ import '../../providers/concepts_provider.dart';
 import '../../providers/mastered_provider.dart';
 import '../../providers/streak_provider.dart';
 import '../../providers/study_dates_provider.dart';
-import '../../providers/subscription_provider.dart';
 import '../../providers/spaced_repetition_provider.dart';
 import '../../providers/readiness_score_provider.dart';
 import 'widgets/stats_overview.dart';
@@ -25,7 +24,6 @@ class ProgressScreen extends ConsumerWidget {
     final mastered = ref.watch(masteredProvider);
     final streak = ref.watch(streakProvider);
     final categories = ref.watch(categoriesProvider);
-    final subscriptionTier = ref.watch(subscriptionProvider);
     final schedules = ref.watch(spacedRepetitionProvider);
     final readiness = ref.watch(readinessScoreProvider);
     final studyDays = ref.watch(studyDatesProvider);
@@ -137,71 +135,26 @@ class ProgressScreen extends ConsumerWidget {
             }, childCount: categories.length),
           ),
         ),
-        if (subscriptionTier == SubscriptionTier.pro) ...[
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            sliver: SliverToBoxAdapter(
-              child: ReadinessGauge(readiness: readiness),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          sliver: SliverToBoxAdapter(
+            child: ReadinessGauge(readiness: readiness),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          sliver: SliverToBoxAdapter(child: HeatmapCalendar(days: studyDays)),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          sliver: SliverToBoxAdapter(
+            child: CategoryConfidenceBars(
+              categories: categories,
+              allConcepts: allConceptsList,
+              schedules: schedules,
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            sliver: SliverToBoxAdapter(child: HeatmapCalendar(days: studyDays)),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            sliver: SliverToBoxAdapter(
-              child: CategoryConfidenceBars(
-                categories: categories,
-                allConcepts: allConceptsList,
-                schedules: schedules,
-              ),
-            ),
-          ),
-        ] else ...[
-          // Pro analytics teaser
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverToBoxAdapter(
-              child: InkWell(
-                onTap: () => context.push('/paywall'),
-                borderRadius: BorderRadius.circular(12),
-                child: Card(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: 0.3,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.workspace_premium,
-                          color: theme.colorScheme.primary,
-                          size: 32,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Unlock your readiness dashboard',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Unlock readiness score, heatmap, and more.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
       ],
     );

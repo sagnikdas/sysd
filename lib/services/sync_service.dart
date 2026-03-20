@@ -3,7 +3,6 @@ import 'dart:async';
 import '../core/config/supabase_config.dart';
 import '../domain/repositories/profile_repository.dart';
 import '../domain/repositories/progress_repository.dart';
-import '../providers/subscription_provider.dart';
 import 'auth_service.dart';
 
 class SyncService {
@@ -21,18 +20,15 @@ class SyncService {
 
   bool _syncInFlight = false;
 
-  Future<void> syncOnSignIn({required SubscriptionTier tier}) async {
-    if (tier != SubscriptionTier.pro) return;
+  Future<void> syncOnSignIn() async {
     await _syncWithBackoff();
   }
 
-  Future<void> syncOnAppOpen({required SubscriptionTier tier}) async {
-    if (tier != SubscriptionTier.pro) return;
+  Future<void> syncOnAppOpen() async {
     await _syncWithBackoff();
   }
 
-  Future<void> queueProgressSync({required SubscriptionTier tier}) async {
-    if (tier != SubscriptionTier.pro) return;
+  Future<void> queueProgressSync() async {
     unawaited(_syncWithBackoff());
   }
 

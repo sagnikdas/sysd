@@ -41,7 +41,7 @@ final class StudyDatesProvider
   }
 }
 
-String _$studyDatesHash() => r'0924c08cf776656ebf4a7004e51eb86103abce99';
+String _$studyDatesHash() => r'd69209ebeb1c6f5991f257f214bca18695e2955e';
 
 abstract class _$StudyDates extends $Notifier<List<StudyDay>> {
   List<StudyDay> build();

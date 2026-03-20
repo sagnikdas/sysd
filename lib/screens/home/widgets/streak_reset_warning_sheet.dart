@@ -2,21 +2,17 @@ import 'package:flutter/material.dart';
 
 class StreakResetWarningSheet extends StatelessWidget {
   final int streakCount;
-  final bool isPro;
   final VoidCallback onStart;
 
   const StreakResetWarningSheet({
     super.key,
     required this.streakCount,
-    required this.isPro,
     required this.onStart,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const title = 'Your streak has ended';
-    final cta = isPro ? 'Start smart session' : 'Start studying';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -39,7 +35,7 @@ class StreakResetWarningSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            title,
+            'Your streak has ended',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -58,7 +54,7 @@ class StreakResetWarningSheet extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: onStart,
-              child: Text(cta),
+              child: const Text('Start smart session'),
             ),
           ),
         ],
@@ -66,4 +62,3 @@ class StreakResetWarningSheet extends StatelessWidget {
     );
   }
 }
-

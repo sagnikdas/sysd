@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -10,7 +9,6 @@ import '../../providers/bookmarks_provider.dart';
 import '../../providers/streak_provider.dart';
 import '../../providers/study_dates_provider.dart';
 import '../../providers/user_prefs_provider.dart';
-import '../../providers/subscription_provider.dart';
 import '../../providers/spaced_repetition_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
@@ -23,7 +21,6 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final userPrefs = ref.watch(userPrefsProvider);
-    final tier = ref.watch(subscriptionProvider);
     final authState = ref.watch(authControllerProvider);
     final bookmarks = ref.watch(bookmarksProvider);
     final displayLabel = userPrefs.displayName.trim().isEmpty
@@ -113,97 +110,43 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.notifications_none_outlined),
             title: const Text('Notification settings'),
-            subtitle: Text(
-              tier == SubscriptionTier.pro
-                  ? _notificationSummary(userPrefs)
-                  : 'Upgrade to Pro to enable reminders',
-            ),
+            subtitle: Text(_notificationSummary(userPrefs)),
           ),
-          if (tier == SubscriptionTier.pro) ...[
-            SwitchListTile(
-              secondary: const Icon(Icons.alarm_outlined),
-              title: const Text('Daily reminders'),
-              subtitle: const Text('Schedule a study nudge on selected days'),
-              value: userPrefs.remindersEnabled,
-              onChanged: (value) =>
-                  _toggleReminders(context, ref, enabled: value),
-            ),
-            ListTile(
-              leading: const Icon(Icons.schedule_outlined),
-              title: const Text('Reminder time'),
-              subtitle: Text(_timeLabel(userPrefs)),
-              enabled: userPrefs.remindersEnabled,
-              onTap: userPrefs.remindersEnabled
-                  ? () => _pickReminderTime(context, ref)
-                  : null,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (var day = 1; day <= 7; day++)
-                    FilterChip(
-                      label: Text(_weekdayLabel(day)),
-                      selected: userPrefs.reminderWeekdays.contains(day),
-                      onSelected: userPrefs.remindersEnabled
-                          ? (_) => _toggleWeekday(context, ref, day)
-                          : null,
-                    ),
-                ],
-              ),
-            ),
-          ],
-          if (kDebugMode)
-            SwitchListTile(
-              secondary: const Icon(Icons.workspace_premium_outlined),
-              title: const Text('Debug: Toggle Pro'),
-              value: ref.watch(subscriptionProvider) == SubscriptionTier.pro,
-              onChanged: (value) async {
-                if (value) {
-                  ref
-                      .read(subscriptionProvider.notifier)
-                      .setTier(SubscriptionTier.pro);
-                  return;
-                }
-                await ref
-                    .read(subscriptionProvider.notifier)
-                    .clearDebugOverride();
-              },
-            ),
-          const Divider(),
+          SwitchListTile(
+            secondary: const Icon(Icons.alarm_outlined),
+            title: const Text('Daily reminders'),
+            subtitle: const Text('Schedule a study nudge on selected days'),
+            value: userPrefs.remindersEnabled,
+            onChanged: (value) =>
+                _toggleReminders(context, ref, enabled: value),
+          ),
           ListTile(
-            leading: const Icon(Icons.restore),
-            title: const Text('Restore Purchase'),
-            onTap: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              try {
-                final tier = await ref
-                    .read(subscriptionProvider.notifier)
-                    .restorePurchases();
-                if (!context.mounted) return;
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      tier == SubscriptionTier.pro
-                          ? 'Pro subscription restored.'
-                          : 'No active Pro purchase found.',
-                    ),
-                  ),
-                );
-              } catch (error) {
-                if (!context.mounted) return;
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      error.toString().replaceFirst('Exception: ', ''),
-                    ),
-                  ),
-                );
-              }
-            },
+            leading: const Icon(Icons.schedule_outlined),
+            title: const Text('Reminder time'),
+            subtitle: Text(_timeLabel(userPrefs)),
+            enabled: userPrefs.remindersEnabled,
+            onTap: userPrefs.remindersEnabled
+                ? () => _pickReminderTime(context, ref)
+                : null,
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (var day = 1; day <= 7; day++)
+                  FilterChip(
+                    label: Text(_weekdayLabel(day)),
+                    selected: userPrefs.reminderWeekdays.contains(day),
+                    onSelected: userPrefs.remindersEnabled
+                        ? (_) => _toggleWeekday(context, ref, day)
+                        : null,
+                  ),
+              ],
+            ),
+          ),
+          const Divider(),
           ListTile(
             leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
             title: Text(
@@ -285,7 +228,6 @@ class SettingsScreen extends ConsumerWidget {
 
     if (!enabled) {
       await NotificationService.instance.cancelDailyReminders();
-      await NotificationService.instance.cancelTrialExpiryReminder();
       return;
     }
 
@@ -328,11 +270,9 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _syncNotificationSchedules(WidgetRef ref) async {
-    final tier = ref.read(subscriptionProvider);
     final prefs = ref.read(userPrefsProvider);
-    if (tier != SubscriptionTier.pro || !prefs.remindersEnabled) {
+    if (!prefs.remindersEnabled) {
       await NotificationService.instance.cancelDailyReminders();
-      await NotificationService.instance.cancelTrialExpiryReminder();
       return;
     }
 
@@ -343,15 +283,6 @@ class SettingsScreen extends ConsumerWidget {
       title: 'Time for a quick review',
       body: 'Keep your system design skills sharp with today\'s cards.',
     );
-
-    final trialStartedAt = ref
-        .read(subscriptionRepositoryProvider)
-        .getTrialStartedAt();
-    if (trialStartedAt != null) {
-      await NotificationService.instance.scheduleTrialExpiryReminder(
-        trialStart: trialStartedAt,
-      );
-    }
   }
 
   Future<void> _editDisplayName(

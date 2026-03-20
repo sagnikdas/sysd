@@ -41,7 +41,7 @@ final class SpacedRepetitionProvider
   }
 }
 
-String _$spacedRepetitionHash() => r'306d7164792497fe123173df3257618114277450';
+String _$spacedRepetitionHash() => r'b63df04078e11ce759ae650859d2031fa6e6c5a8';
 
 abstract class _$SpacedRepetition extends $Notifier<Map<int, ReviewSchedule>> {
   Map<int, ReviewSchedule> build();

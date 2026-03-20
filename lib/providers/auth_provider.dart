@@ -8,7 +8,6 @@ import '../domain/repositories/profile_repository.dart';
 import '../domain/repositories/progress_repository.dart';
 import '../services/auth_service.dart';
 import '../services/sync_service.dart';
-import 'subscription_provider.dart';
 
 class AuthUiState {
   const AuthUiState({
@@ -60,8 +59,7 @@ class AuthController extends Notifier<AuthUiState> {
     if (isSupabaseConfigured) {
       _sub = ref.read(authServiceProvider).authStateChanges.listen((event) {
         state = state.copyWith(user: event.session?.user, errorMessage: null);
-        final tier = ref.read(subscriptionProvider);
-        unawaited(ref.read(syncServiceProvider).syncOnAppOpen(tier: tier));
+        unawaited(ref.read(syncServiceProvider).syncOnAppOpen());
       });
       ref.onDispose(() => _sub?.cancel());
     }
@@ -83,8 +81,7 @@ class AuthController extends Notifier<AuthUiState> {
         state = state.copyWith(errorMessage: 'Google sign-in was not completed.');
         return;
       }
-      final tier = ref.read(subscriptionProvider);
-      await ref.read(syncServiceProvider).syncOnSignIn(tier: tier);
+      await ref.read(syncServiceProvider).syncOnSignIn();
       state = state.copyWith(isAnonymousMode: false, errorMessage: null);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
@@ -97,8 +94,7 @@ class AuthController extends Notifier<AuthUiState> {
   }) async {
     try {
       await ref.read(authServiceProvider).signInWithEmail(email, password);
-      final tier = ref.read(subscriptionProvider);
-      await ref.read(syncServiceProvider).syncOnSignIn(tier: tier);
+      await ref.read(syncServiceProvider).syncOnSignIn();
       state = state.copyWith(isAnonymousMode: false, errorMessage: null);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
@@ -116,8 +112,7 @@ class AuthController extends Notifier<AuthUiState> {
         password: password,
         name: name,
       );
-      final tier = ref.read(subscriptionProvider);
-      await ref.read(syncServiceProvider).syncOnSignIn(tier: tier);
+      await ref.read(syncServiceProvider).syncOnSignIn();
       state = state.copyWith(isAnonymousMode: false, errorMessage: null);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
