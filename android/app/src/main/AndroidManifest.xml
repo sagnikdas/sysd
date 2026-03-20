@@ -1,11 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <!-- Required to reschedule alarms after device reboot -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <!-- Exact alarms: API 31-32 requires user grant; API 33+ is auto-granted -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
-        android:maxSdkVersion="32"/>
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <application
         android:label="sysd"
         android:name="${applicationName}"

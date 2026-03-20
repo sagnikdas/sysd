@@ -41,7 +41,7 @@ final class UserPrefsProvider
   }
 }
 
-String _$userPrefsHash() => r'31e99b6cf0eacad0fc9569f73ceed23625be0598';
+String _$userPrefsHash() => r'037577d7279a464c4efdd696b629dc5e22ae4720';
 
 abstract class _$UserPrefs extends $Notifier<UserPrefsState> {
   UserPrefsState build();

@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'core/config/supabase_config.dart';
-import 'services/notification_service.dart';
 
 Future<void> _openHiveBoxes() async {
   try {
@@ -63,7 +62,6 @@ void main() async {
 
   await _migrateLegacyUserName();
   await initializeSupabaseIfConfigured();
-  await NotificationService.instance.initialize();
 
   runApp(const ProviderScope(child: SysDesignFlashApp()));
 }

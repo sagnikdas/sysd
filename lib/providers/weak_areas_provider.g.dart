@@ -41,7 +41,7 @@ final class WeakAreasProvider
   }
 }
 
-String _$weakAreasHash() => r'08d013096eb287d226128ee6b01d162b26416297';
+String _$weakAreasHash() => r'0c22f4a670c076e2407d48a165d36cdf7e8cc7a4';
 
 abstract class _$WeakAreas extends $Notifier<List<WeakArea>> {
   List<WeakArea> build();

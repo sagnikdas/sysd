@@ -8,9 +8,10 @@ class AppScaffold extends StatelessWidget {
 
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    if (location.startsWith('/concepts')) return 0;
+    if (location.startsWith('/home')) return 0;
+    if (location.startsWith('/concepts')) return 1;
     if (location.startsWith('/progress')) return 2;
-    return 1;
+    return 0;
   }
 
   @override
@@ -24,23 +25,23 @@ class AppScaffold extends StatelessWidget {
         onDestinationSelected: (index) {
           switch (index) {
             case 0:
-              context.go('/concepts');
-            case 1:
               context.go('/home');
+            case 1:
+              context.go('/concepts');
             case 2:
               context.go('/progress');
           }
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.style_outlined),
-            selectedIcon: Icon(Icons.style),
-            label: 'Concepts',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.style_outlined),
+            selectedIcon: Icon(Icons.style),
+            label: 'Concepts',
           ),
           NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
